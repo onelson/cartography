@@ -2,7 +2,7 @@ eclipse/
 build/
 .gradle/
 
-/src/main/resources/assets/*
+/public/assets/*
 
 # IDE project defs
 *.iml

@@ -26,8 +26,9 @@ object CartographyMod {
   def init(e: FMLInitializationEvent) {
     // TODO: use config (read during preInit) when creating server
     server = Some(NettyServer.fromRouter() {
-      case GET(p"/") => Application.index
-      case GET(p"/assets/$file*") => Assets.versioned(path="/assets", file=file)
+      case GET(p"/") => Assets.versioned(path="/public", file="index.html")
+      case GET(p"/index.html") => Assets.versioned(path="/public", file="index.html")
+      case GET(p"/assets/$file*") => Assets.versioned(path="/public/assets", file=file)
     })
   }
 
