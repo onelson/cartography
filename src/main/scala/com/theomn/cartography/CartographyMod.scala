@@ -1,6 +1,7 @@
 package com.theomn.cartography
 
 import com.theomn.cartography.web.controllers.Application
+import controllers.Assets
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.{FMLInitializationEvent, FMLPreInitializationEvent, FMLServerStoppingEvent}
 import org.apache.logging.log4j.LogManager
@@ -26,6 +27,7 @@ object CartographyMod {
     // TODO: use config (read during preInit) when creating server
     server = Some(NettyServer.fromRouter() {
       case GET(p"/") => Application.index
+      case GET(p"/assets/$file*") => Assets.versioned(path="/assets", file=file)
     })
   }
 
