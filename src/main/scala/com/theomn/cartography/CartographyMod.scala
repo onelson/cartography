@@ -20,7 +20,13 @@ import net.minecraftforge.fml.common.gameevent.TickEvent.WorldTickEvent
 import scala.collection.mutable
 
 
-@Mod(modid="Cartography", name="Cartography", version="0.0.1-SNAPSHOT", modLanguage="scala", serverSideOnly=true)
+@Mod(
+  modid="cartography",
+  name="Cartography",
+  version="0.0.1-SNAPSHOT",
+  modLanguage="scala",
+  serverSideOnly=true,
+  acceptableRemoteVersions="*")
 object CartographyMod {
 
   val moveThreshold: Int = 10
