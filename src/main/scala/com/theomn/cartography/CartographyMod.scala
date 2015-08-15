@@ -5,11 +5,10 @@ import org.apache.logging.log4j.LogManager
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.{FMLInitializationEvent, FMLPreInitializationEvent, FMLServerStoppingEvent}
 
-import akka.actor.Props
+import akka.actor.{ActorRef, ActorSystem, Props}
 import play.api.mvc.{Action, Results}
 import play.api.routing.sird._
 import play.core.server._
-import play.api.libs.concurrent.Akka
 import controllers.Assets
 
 import com.theomn.cartography.actors.TileGenActor
@@ -26,6 +25,7 @@ object CartographyMod {
 
   val logger = LogManager.getLogger("Cartography")
   var server: Option[NettyServer] = None
+  var system: Option[ActorSystem] = None
 
   // TODO: lookup conf details for the netty server
   // TODO: prime the sqlite db
@@ -34,7 +34,12 @@ object CartographyMod {
 
   @Mod.EventHandler
   def init(e: FMLInitializationEvent): Unit = {
-    Application
+
+    system = Some(ActorSystem("cartography"))
+    val tileGenActor = system.get.actorOf(
+      Props[TileGenActor].withDispatcher("tilegen-dispatcher-fork"),
+      "tilegen")
+
     // TODO: use config (read during preInit) when creating server
     server = Some(NettyServer.fromRouter() {
       case GET(p"/") => Assets.versioned(path="/public", file="index.html")
@@ -43,15 +48,11 @@ object CartographyMod {
       case GET(p"/todo*") => Application.todo
     })
 
-    import play.api.Play.current
-
-    val tileGenActor = Akka.system.actorOf(
-      Props[TileGenActor],
-      name="tileGenActor")
   }
 
   @Mod.EventHandler
   def shutdown(e: FMLServerStoppingEvent): Unit = {
     server.foreach(_.stop())
+    system.foreach(_.shutdown())
   }
 }
