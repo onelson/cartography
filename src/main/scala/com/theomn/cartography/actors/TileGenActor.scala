@@ -1,8 +1,6 @@
 package com.theomn.cartography.actors
 
 
-import java.awt.image.BufferedImage
-
 import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.server.MinecraftServer
 import net.minecraft.util.BlockPos
@@ -14,20 +12,7 @@ import scala.collection.JavaConversions._
 import akka.actor.Actor
 import akka.event.Logging
 
-
-class MapTile(x: Int, y: Int) {
-  override def toString = s"MapTile(x: $x, y: $y)"
-}
-
-object MapTile {
-  val TILE_SIZE = 256
-
-  def apply(x: Int, y: Int) = new MapTile(x, y)
-  def apply(pos: BlockPos): MapTile = MapTile(pos.getX / TILE_SIZE, pos.getZ / TILE_SIZE)
-
-  def getImage(zoomLevel: Int)(implicit world: WorldServer): BufferedImage = ???
-
-}
+import com.theomn.cartography.MapTile
 
 
 class TileGenActor extends Actor {
@@ -97,10 +82,6 @@ class TileGenActor extends Actor {
     val top = world.getTopSolidOrLiquidBlock(pos)
     val chunk =
       world.getChunkFromBlockCoords(top)
-
-
-
-    val foo = chunk.getTopFilledSegment
 
     val block = chunk.getBlock(top)
     val rgb = block.getMaterial.getMaterialMapColor.colorValue
