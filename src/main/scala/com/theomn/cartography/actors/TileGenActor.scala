@@ -1,6 +1,9 @@
 package com.theomn.cartography.actors
 
 
+import java.io.{IOException, File}
+import javax.imageio.ImageIO
+
 import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.server.MinecraftServer
 import net.minecraft.util.BlockPos
@@ -78,14 +81,16 @@ class TileGenActor extends Actor {
 
   def generateTile(pos: BlockPos, world: WorldServer): Unit = {
     logger.warning("want to gen {}", pos)
+    val tile = MapTile(pos, world)
+    logger.debug(tile.toString)
 
-    val top = world.getTopSolidOrLiquidBlock(pos)
-    val chunk =
-      world.getChunkFromBlockCoords(top)
+    try {
+      val outputfile = new File(s"/tmp/tiles/${tile.imgFileName}")
+      ImageIO.write(tile.getImage(zoomLevel=0), "png", outputfile)
+    } catch {
+      case e: IOException => logger.error(e, e.getMessage)
+    }
 
-    val block = chunk.getBlock(top)
-    val rgb = block.getMaterial.getMaterialMapColor.colorValue
-    logger.debug("{} @ {}", rgb, MapTile(top))
   }
 
 }
