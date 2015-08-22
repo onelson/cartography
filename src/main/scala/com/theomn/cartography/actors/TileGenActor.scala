@@ -84,11 +84,11 @@ class TileGenActor extends Actor {
     val tile = MapTile(pos, world)
     logger.debug(tile.toString)
 
+    val outputfile = new File(s"/tmp/tiles/${tile.imgFileName}")
     try {
-      val outputfile = new File(s"/tmp/tiles/${tile.imgFileName}")
       ImageIO.write(tile.getImage(zoomLevel=0), "png", outputfile)
     } catch {
-      case e: IOException => logger.error(e, e.getMessage)
+      case e: Throwable => logger.error(e, e.getMessage)
     }
 
   }
