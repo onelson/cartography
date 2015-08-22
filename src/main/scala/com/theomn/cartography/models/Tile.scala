@@ -8,13 +8,13 @@ import slick.driver.H2Driver.api._
 
 case class Tile(zoomLevel: Int, x: Int, y: Int, data: Blob, world: String)
 
-class TilesTable(tag: Tag) extends Table[(Int, Int, Int, Blob, String)](tag, "tiles") {
+class TilesTable(tag: Tag) extends Table[Tile](tag, "tiles") {
   def zoomLevel = column[Int]("zoomLevel")
   def x = column[Int]("tile_column")
   def y = column[Int]("tile_row")
   def data = column[Blob]("tile_data")
   def world = column[String]("world")
-  def * = (zoomLevel, x, y, data, world)
+  def * = (zoomLevel, x, y, data, world) <> (Tile.tupled, Tile.unapply)
 }
 
 object tiles extends TableQuery(new TilesTable(_))
