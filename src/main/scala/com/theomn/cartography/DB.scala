@@ -1,11 +1,11 @@
 package com.theomn.cartography
 
+
 import slick.driver.H2Driver.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
 object DB {
-
   // TODO: ensure schema is setup before handing back a connection
   def get = Database.forConfig("h2mem")
 
@@ -18,5 +18,4 @@ object DB {
     implicit val db = get
     q
   } finally db.close
-
 }
