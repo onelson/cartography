@@ -2,16 +2,9 @@ package com.theomn.cartography
 
 import org.apache.logging.log4j.LogManager
 
-import net.minecraftforge.fml.common.Mod
-import net.minecraftforge.fml.common.event.{FMLInitializationEvent, FMLPreInitializationEvent, FMLServerStoppingEvent}
+import net.minecraftforge.fml.common.{FMLCommonHandler, Mod}
+import net.minecraftforge.fml.common.event.{FMLPostInitializationEvent, FMLInitializationEvent, FMLPreInitializationEvent, FMLServerStoppingEvent}
 
-import akka.actor.{ActorRef, ActorSystem, Props}
-import play.api.mvc.{Action, Results}
-import play.api.routing.sird._
-import play.core.server._
-import controllers.Assets
-
-import com.theomn.cartography.actors.TileGenActor
 import com.theomn.cartography.web.controllers.Application
 
 @Mod(
@@ -24,8 +17,6 @@ import com.theomn.cartography.web.controllers.Application
 object CartographyMod {
 
   val logger = LogManager.getLogger("Cartography")
-  var server: Option[NettyServer] = None
-  var system: Option[ActorSystem] = None
 
   // TODO: lookup conf details for the netty server
   // TODO: prime the sqlite db
@@ -34,25 +25,17 @@ object CartographyMod {
 
   @Mod.EventHandler
   def init(e: FMLInitializationEvent): Unit = {
+    DB.setup()
+    Application.start()
+  }
 
-    system = Some(ActorSystem("cartography"))
-    val tileGenActor = system.get.actorOf(
-      Props[TileGenActor].withDispatcher("tilegen-dispatcher-fork"),
-      "tilegen")
-
-    // TODO: use config (read during preInit) when creating server
-    server = Some(NettyServer.fromRouter() {
-      case GET(p"/") => Assets.versioned(path="/public", file="index.html")
-      case GET(p"/index.html") => Assets.versioned(path="/public", file="index.html")
-      case GET(p"/assets/$file*") => Assets.versioned(path="/public/assets", file=file)
-      case GET(p"/todo*") => Application.todo
-    })
+  @Mod.EventHandler
+  def serverTick(e: FMLPostInitializationEvent) = {
+    FMLCommonHandler.instance().bus().register(new CartographyEventHandler())
 
   }
 
   @Mod.EventHandler
   def shutdown(e: FMLServerStoppingEvent): Unit = {
-    server.foreach(_.stop())
-    system.foreach(_.shutdown())
   }
 }

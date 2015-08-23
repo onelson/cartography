@@ -1,25 +1,34 @@
 package com.theomn.cartography
 
 import java.awt.image.BufferedImage
-import scala.collection.JavaConversions._
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
+import javax.xml.bind.DatatypeConverter
 
+import net.minecraft.server.MinecraftServer
 import net.minecraft.util.BlockPos
-import net.minecraft.world.WorldServer
+import org.apache.logging.log4j.LogManager
+
+import slick.driver.H2Driver.api._
+
+import com.theomn.cartography.Implicits._
+import com.theomn.cartography.models.{tiles, DBTile}
 
 
-class MapTile(val x: Int, val y: Int, val world: WorldServer) {
+
+class MapTile(val x: Int, val y: Int) {
   import MapTile.TILE_SIZE
+  val logger = LogManager.getLogger("Cartography")
 
   override def toString = s"MapTile(x: $x, y: $y)"
-
-  // XXX: Just for testing... remove when writing to db
-  def imgFileName = s"tile-${world.getWorldInfo.getWorldName}-$x-$y.png"
 
   def getImage(zoomLevel: Int): BufferedImage = {
     val img = new BufferedImage(TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_RGB)
     img.setRGB(0, 0, TILE_SIZE, TILE_SIZE, getBlocks(zoomLevel=0).map(getRGB).toArray, 0, TILE_SIZE)
     img
   }
+
+  def world = MinecraftServer.getServer.getEntityWorld
 
   private def getRGB(pos: BlockPos): Int = {
     val top = world.getTopSolidOrLiquidBlock(pos)
@@ -34,10 +43,23 @@ class MapTile(val x: Int, val y: Int, val world: WorldServer) {
     (for {blockY <- yRange.sortBy(-_)}
      yield xRange.map {new BlockPos(_, 0, blockY)}).flatten
   }
+
+  def save():Unit = {
+    logger.info("writing {} to db.", this)
+    val img = getImage(zoomLevel=0)
+    val out = new ByteArrayOutputStream()
+    ImageIO.write(img, "png", out)
+    out.flush()
+    val data = DatatypeConverter.printBase64Binary(out.toByteArray)
+    val record = DBTile(0, x, y, data)
+    val db = DB.getConn
+    db.run(tiles += record)
+  }
+
 }
 
 object MapTile {
   val TILE_SIZE = 256
-  def apply(x: Int, y: Int, world: WorldServer) = new MapTile(x, y, world)
-  def apply(pos: BlockPos, world: WorldServer): MapTile = MapTile(pos.getX / TILE_SIZE, pos.getZ / TILE_SIZE, world)
+  def apply(x: Int, y: Int) = new MapTile(x, y)
+  def apply(pos: BlockPos): MapTile = MapTile(pos.getX / TILE_SIZE, pos.getZ / TILE_SIZE)
 }

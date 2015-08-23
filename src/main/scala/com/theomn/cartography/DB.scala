@@ -1,21 +1,17 @@
 package com.theomn.cartography
 
-
 import slick.driver.H2Driver.api._
-import scala.concurrent.ExecutionContext.Implicits.global
+import com.theomn.cartography.Implicits._
+import com.theomn.cartography.models.tiles
 
 
 object DB {
-  // TODO: ensure schema is setup before handing back a connection
-  def get = Database.forConfig("h2mem")
+  lazy private[this] val db = Database.forConfig("h2mem")
+  def getConn = db
 
-  /**
-   * Unsure this will actually be useful...
-   * @param q query to run
-   * @return Unit
-   */
-  def run(q: => Any) = try {
-    implicit val db = get
-    q
-  } finally db.close
+  lazy val schema = tiles.schema
+  def setup() = {
+    val db = getConn
+    db.run(DBIO.seq(schema.create))
+  }
 }
