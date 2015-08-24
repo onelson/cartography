@@ -1,92 +1,65 @@
 package com.theomn.cartography
 
 
-import java.util.concurrent.Executors
-
-import net.minecraft.entity.Entity
-import net.minecraft.entity.player.{EntityPlayerMP, EntityPlayer}
+import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.server.MinecraftServer
-import net.minecraftforge.client.MinecraftForgeClient
-import net.minecraftforge.common.MinecraftForge
+import net.minecraft.world.World
 import net.minecraftforge.fml.relauncher.{SideOnly, Side}
 import org.apache.logging.log4j.LogManager
 
-import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
-
 import net.minecraft.util.BlockPos
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
-import net.minecraftforge.fml.common.gameevent.TickEvent.{PlayerTickEvent, WorldTickEvent, ServerTickEvent}
+import net.minecraftforge.fml.common.gameevent.TickEvent.ServerTickEvent
 
-import com.theomn.cartography.Implicits._
+import scala.collection.mutable
 
 
-case class Player(id: Int, name: String, pos: BlockPos)
+case class Player(id: Int, name: String, pos: BlockPos, world: World)
 
 object Player {
-  def apply(entity: EntityPlayer) = new Player(
+  def apply(entity: EntityPlayerMP) = new Player(
     entity.getEntityId,
     entity.getDisplayNameString,
-    entity.getPosition)
+    entity.getPosition,
+    entity.worldObj)
 }
 
 @SideOnly(Side.SERVER)
 class CartographyEventHandler {
 
-    implicit val ec = new ExecutionContext {
-      val logger = LogManager.getLogger("Cartography")
-      val threadPool = Executors.newFixedThreadPool(1000)
-
-      def execute(runnable: Runnable) = threadPool.submit(runnable)
-
-      def reportFailure(t: Throwable): Unit = {
-        logger.error(t.getMessage, t)
-      }
-    }
+  val MOVE_THRESHOLD = 100
+  private val lastPos = mutable.Map[Int, BlockPos]()
   
   def now(): Long = MinecraftServer.getCurrentTimeMillis
   
   val logger = LogManager.getLogger("Cartography")
 
   private var lastTick = now()
-  val interval = 3000
+  val interval = 10000
+  var processing: Boolean = false
+
+  def activePlayers: Array[Player] =
+    MinecraftServer
+      .getServer
+      .getConfigurationManager
+      .playerEntityList
+      .toArray
+      .map(_.asInstanceOf[EntityPlayerMP])
+      .map(Player(_))
 
   @SubscribeEvent
-  def tick(e: WorldTickEvent) = {
-    val world = e.world
+  def tick(e: ServerTickEvent): Unit = {
     val currentTime = now()
     val delta = currentTime - lastTick
-    if (delta > interval) {
-      world.playerEntities.toArray
-        .map(_.asInstanceOf[EntityPlayerMP])
-        .map(Player(_))
-        .filter(isMoving(_))
-        .foreach { player: Player =>
+    if (!processing && delta > interval) {
+      processing = true
+      try {
+        logger.info(s"Server Tick: $delta")
+        activePlayers.filter(isMoving).foreach(generateTile)
         lastTick = currentTime
-        logger.info(s"Player Tick: $delta")
-        generateTile(player)
-      }
+      } finally processing = false
     }
   }
-
-//  @SubscribeEvent
-  def tick(e: PlayerTickEvent) = {
-    val player = Player(e.player)
-    val currentTime = now()
-    val delta = currentTime - lastTick
-    if (delta > interval) {
-      if(isMoving(player)) {
-        lastTick = currentTime
-        logger.info(s"Player Tick: $delta")
-        generateTile(player)
-      }
-    }
-  }
-
-
-  val MOVE_THRESHOLD = 100
-  private val lastPos = mutable.Map[Int, BlockPos]()
-
 
   def distanceSq(a: BlockPos, b: BlockPos): Int = {
     val x = a.getX - b.getX
@@ -119,11 +92,9 @@ class CartographyEventHandler {
   }
 
   def generateTile(player: Player): Unit = {
-    Future {
-      val tile = MapTile(player.pos)
-      logger.debug(tile.toString)
-      tile.save()
-    }
+    var tile = MapTile(player)
+    logger.debug(tile.toString)
+    tile.save()
+    tile = null
   }
-
 }

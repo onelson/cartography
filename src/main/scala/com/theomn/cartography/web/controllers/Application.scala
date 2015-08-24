@@ -1,8 +1,5 @@
 package com.theomn.cartography.web.controllers
 
-//import scala.concurrent.ExecutionContext.global
-
-import com.theomn.cartography.Implicits._
 
 import akka.actor.ActorSystem
 import akka.event.Logging
@@ -15,7 +12,6 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import slick.driver.H2Driver.api._
 import spray.json.DefaultJsonProtocol
 
-//import com.theomn.cartography.Implicits._
 import com.theomn.cartography.DB
 import com.theomn.cartography.models.{DBTile, tiles}
 
@@ -23,14 +19,14 @@ object JsonProtocol extends DefaultJsonProtocol {
   implicit val tileFormat = jsonFormat4(DBTile.apply)
 }
 
+import com.theomn.cartography.Implicits._
+
 
 object Application extends App {
 
   import JsonProtocol._
-
   implicit val system = ActorSystem("cartogarphy")
   implicit val materializer = ActorMaterializer()
-
   val logger = Logging(system, getClass)
 
   val route = path("tiles") {
@@ -45,10 +41,8 @@ object Application extends App {
     }
 
   val bindingFuture = Http().bindAndHandle(route, "localhost", 9000)
-  import system.dispatcher // for the future transformations
-//  bindingFuture
-//    .flatMap(_.unbind()) // trigger unbinding from the port
-//    .onComplete(_ => system.shutdown()) // and shutdown when done
+
+  def stop() = system.shutdown()
 
   def start() = {
     main(args=Array[String]())
