@@ -19,7 +19,7 @@ object JsonProtocol extends DefaultJsonProtocol {
   implicit val tileFormat = jsonFormat4(DBTile.apply)
 }
 
-import com.theomn.cartography.Implicits._
+import com.theomn.cartography.Executors.threadpoolContext
 
 
 object Application extends App {

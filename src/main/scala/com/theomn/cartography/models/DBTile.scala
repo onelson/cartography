@@ -2,7 +2,7 @@ package com.theomn.cartography.models
 
 
 import slick.driver.H2Driver.api._
-import com.theomn.cartography.Implicits._
+import com.theomn.cartography.Executors.threadpoolContext
 
 
 case class DBTile(zoomLevel: Int, column: Int, row: Int, data: String)

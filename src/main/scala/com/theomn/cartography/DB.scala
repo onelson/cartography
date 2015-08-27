@@ -1,7 +1,7 @@
 package com.theomn.cartography
 
 import slick.driver.H2Driver.api._
-import com.theomn.cartography.Implicits._
+import com.theomn.cartography.Executors.threadpoolContext
 import com.theomn.cartography.models.tiles
 
 

@@ -7,7 +7,7 @@ import org.apache.logging.log4j.LogManager
 import scala.concurrent._
 
 
-object Implicits {
+object Executors {
   implicit val mcContext = new ExecutionContext {
 
     val logger = LogManager.getLogger("Cartography")
@@ -20,15 +20,15 @@ object Implicits {
     }
   }
 
-//  implicit val threadpoolEC = new ExecutionContext {
-//    val logger = LogManager.getLogger("Cartography")
-//    val threadPool = Executors.newFixedThreadPool(50)
-//
-//    def execute(runnable: Runnable) = threadPool.submit(runnable)
-//
-//    def reportFailure(t: Throwable): Unit = {
-//      logger.error(t.getMessage, t)
-//    }
-//  }
+  implicit val threadpoolContext = new ExecutionContext {
+    val logger = LogManager.getLogger("Cartography")
+    val threadPool = java.util.concurrent.Executors.newFixedThreadPool(50)
+
+    def execute(runnable: Runnable) = threadPool.submit(runnable)
+
+    def reportFailure(t: Throwable): Unit = {
+      logger.error(t.getMessage, t)
+    }
+  }
 
 }

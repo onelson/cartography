@@ -78,12 +78,12 @@ class CartographyEventHandler {
 
     oldBlock match {
       case None =>
-        this.synchronized {
+        lastPos.synchronized {
           lastPos.update(player.id, newBlock)
         }
         true
       case Some(block) => if(distanceSq(block, newBlock) >= MOVE_THRESHOLD) {
-        this.synchronized {
+        lastPos.synchronized {
           lastPos.update(player.id, newBlock)
         }
         true

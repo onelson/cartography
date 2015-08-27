@@ -13,9 +13,12 @@ import slick.driver.H2Driver.api._
 
 import com.theomn.cartography.models.{tiles, DBTile}
 
+import scala.concurrent.Future
+import com.theomn.cartography.Executors.threadpoolContext
 
 
-class MapTile(val x: Int, val y: Int, world: World) {
+
+class MapTile(val x: Int, val y: Int, val world: World) {
   import MapTile.TILE_SIZE
   val logger = LogManager.getLogger("Cartography")
 
@@ -27,7 +30,7 @@ class MapTile(val x: Int, val y: Int, world: World) {
     img
   }
 
-  private def getRGB(w: World, pos: BlockPos): Int = {
+  private def getRGB(pos: BlockPos): Int = {
     val top = world.getTopSolidOrLiquidBlock(pos)
     val chunk =
       world.getChunkFromBlockCoords(top)
@@ -43,20 +46,22 @@ class MapTile(val x: Int, val y: Int, world: World) {
       xRange.map {
         new BlockPos(_, 0, blockY)
       }
-    }).flatten.map(getRGB(world, _))
+    }).flatten.map(getRGB)
 
   }
 
   def save():Unit = {
     logger.info("writing {} to db.", this)
     val img = getImage(zoomLevel=0)
-    val out = new ByteArrayOutputStream()
-    ImageIO.write(img, "png", out)
-    out.flush()
-    val data = DatatypeConverter.printBase64Binary(out.toByteArray)
-    val record = DBTile(0, x, y, data)
-    val db = DB.getConn
-    db.run(tiles += record)
+    Future {
+      val out = new ByteArrayOutputStream()
+      ImageIO.write(img, "png", out)
+      out.flush()
+      val data = DatatypeConverter.printBase64Binary(out.toByteArray)
+      val record = DBTile(0, x, y, data)
+      val db = DB.getConn
+      db.run(tiles += record)
+    }
   }
 
 }
@@ -64,6 +69,8 @@ class MapTile(val x: Int, val y: Int, world: World) {
 object MapTile {
   val TILE_SIZE = 256
   def apply(x: Int, y: Int, world: World) = new MapTile(x, y, world)
-  def apply(pos: BlockPos, world: World): MapTile = MapTile(pos.getX / TILE_SIZE, pos.getZ / TILE_SIZE, world)
-  def apply(player: Player): MapTile = MapTile(player.pos.getX / TILE_SIZE, player.pos.getZ / TILE_SIZE, player.world)
+  def apply(pos: BlockPos, world: World): MapTile =
+    MapTile(pos.getX / TILE_SIZE, pos.getZ / TILE_SIZE, world)
+  def apply(player: Player): MapTile =
+    MapTile(player.pos.getX / TILE_SIZE, player.pos.getZ / TILE_SIZE, player.world)
 }
