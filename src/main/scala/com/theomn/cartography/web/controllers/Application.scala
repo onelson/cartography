@@ -42,7 +42,10 @@ object Application extends App {
 
   val bindingFuture = Http().bindAndHandle(route, "localhost", 9000)
 
-  def stop() = system.shutdown()
+  def stop() = {
+    system.shutdown()
+    DB.shutdown()
+  }
 
   def start() = {
     main(args=Array[String]())
