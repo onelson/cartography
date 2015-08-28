@@ -11,7 +11,9 @@ import com.theomn.cartography.models.tiles
 
 object DB {
   lazy private[this] val db = {
-    val dbfile = new File(MinecraftServer.getServer.getDataDirectory, "cartography.db").getAbsolutePath
+    val dbfile = new File(
+      MinecraftServer.getServer.getDataDirectory,
+      "cartography.db").getAbsolutePath
     Database.forURL(
       s"jdbc:h2:file:$dbfile;DB_CLOSE_DELAY=-1",
       driver="org.h2.Driver",
