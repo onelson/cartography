@@ -4,7 +4,7 @@ import javax.xml.bind.DatatypeConverter
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import akka.http.scaladsl.model.{MediaTypes, HttpResponse, ContentType}
+import akka.http.scaladsl.model.{MediaTypes, HttpEntity, HttpResponse, ContentType}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes._
@@ -12,6 +12,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import scalatags.Text.all._
 
 import slick.driver.H2Driver.api._
 import spray.json.DefaultJsonProtocol
@@ -33,13 +34,22 @@ object Application extends App {
   implicit val materializer = ActorMaterializer()
   val logger = Logging(system, getClass)
   val db = DB.getConn
+  import scalatags.Text.all._
 
   val route = pathSingleSlash {
     get{
       complete {
-        <html>
-          <body>Hello world!</body>
-        </html>
+        val entity = HttpEntity(ContentType(MediaTypes.`text/html`),
+            "<!doctype html>" + html(
+            head(
+              link(rel:="stylesheet")
+            ),
+            body(
+              h1("Cartography")
+            )
+          )
+        )
+        HttpResponse(OK, entity=entity)
       }
     }
   } ~
@@ -69,12 +79,10 @@ object Application extends App {
           for {result <- DB.getConn.run(q.result.headOption)} yield result match {
             case Some(tile: DBTile) =>
               val img = DatatypeConverter.parseBase64Binary(tile.data)
-              val resp = HttpResponse(OK, entity = img)
-              val respEntity =
-                resp.entity.withContentType(ContentType(MediaTypes.`image/png`))
-              HttpResponse(OK, entity = respEntity)
+              val entity = HttpEntity(ContentType(MediaTypes.`image/png`), img)
+              HttpResponse(OK, entity=entity)
             case _ =>
-              HttpResponse(NotFound, entity = "tile not found")
+              HttpResponse(NotFound, entity="tile not found")
           }
 
         }

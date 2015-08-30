@@ -55,6 +55,7 @@ dependencies {
     compile 'com.typesafe.akka:akka-http-spray-json-experimental_2.11:1.0'
     compile 'com.typesafe.akka:akka-http-xml-experimental_2.11:1.0'
     compile 'com.typesafe.slick:slick_2.11:3.0.2'
+    compile 'com.lihaoyi:scalatags_2.11:0.5.2'
     compile 'com.h2database:h2:1.4.188'
 //    compile 'com.typesafe.play:play-slick_2.11:1.0.1'
 //    compile 'com.typesafe.play:play-slick-evolutions_2.11:1.0.1'
