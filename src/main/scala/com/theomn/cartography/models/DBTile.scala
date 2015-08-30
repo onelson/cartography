@@ -5,7 +5,7 @@ import slick.driver.H2Driver.api._
 import com.theomn.cartography.Executors.threadpoolContext
 
 
-case class DBTile(zoomLevel: Int, column: Int, row: Int, data: String)
+case class DBTile(zoomLevel: Int, col: Int, row: Int, data: String)
 
 class TilesTable(tag: Tag) extends Table[DBTile](tag, "tiles") {
   def zoomLevel = column[Int]("zoomLevel")

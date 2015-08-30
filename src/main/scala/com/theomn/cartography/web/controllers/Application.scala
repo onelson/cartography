@@ -62,10 +62,23 @@ object Application extends App {
       }
     } ~
     (path("grid") & get){
-      // TODO: display grid of tile pics
       complete {
-        ToResponseMarshallable {
-          db.run(tiles.all.result)
+        val worldName = "TODO"
+        for(tiles <- db.run(tiles.all.result)) yield {
+          val entity = HttpEntity(ContentType(MediaTypes.`text/html`),
+            "<!doctype html>" + html(
+              head(
+                link(rel:="stylesheet")
+              ),
+              body(
+                tiles.map(t => img(
+                  src:=s"/tiles/$worldName/${t.col}/${t.row}/${t.zoomLevel}",
+                  title:=s"(${t.col}${t.row})")
+                )
+              )
+            )
+          )
+          HttpResponse(OK, entity=entity)
         }
       }
     } ~
