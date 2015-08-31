@@ -45,59 +45,61 @@ object Application extends App {
   } ~
   (pathPrefix("tiles") & get) {
     pathEnd {
-      complete {
-        ToResponseMarshallable {
-          db.run(tiles.all.result)
+      encodeResponse {
+        complete{
+          ToResponseMarshallable {
+            db.run(tiles.all.result)
+          }
         }
       }
     } ~
     (path("grid") & get){
-      complete {
-        val worldName = "TODO"
-        for(tiles <- db.run(tiles.all.result)) yield {
-          val entity = HttpEntity(ContentType(MediaTypes.`text/html`),
-            "<!doctype html>" + html(
-              head(
-                link(rel:="stylesheet")
-              ),
-              body(
-                tiles.map(t => img(
-                  src:=s"/tiles/$worldName/${t.col}/${t.row}/${t.zoomLevel}",
-                  title:=s"(${t.col}${t.row})")
+      encodeResponse {
+        complete {
+          val worldName = "TODO"
+          for(tiles <- db.run(tiles.all.result)) yield {
+            val entity = HttpEntity(ContentType(MediaTypes.`text/html`),
+              "<!doctype html>" + html(
+                head(
+                  link(rel:="stylesheet")
+                ),
+                body(
+                  tiles.map(t => img(
+                    src:=s"/tiles/$worldName/${t.col}/${t.row}/${t.zoomLevel}",
+                    title:=s"(${t.col}${t.row})")
+                  )
                 )
               )
             )
-          )
-          HttpResponse(OK, entity=entity)
+            HttpResponse(OK, entity=entity)
+          }
         }
       }
     } ~
     (path(Segment / Segment / Segment / IntNumber) & get) {
       (worldName, col, row, zoomLevel) =>
-        complete {
-          val q = tiles
-            .filter(_.col === col.toInt)
-            .filter(_.row === row.toInt)
-            .filter(_.zoomLevel === zoomLevel)
-          for {result <- DB.getConn.run(q.result.headOption)} yield result match {
-            case Some(tile: DBTile) =>
-              val img = DatatypeConverter.parseBase64Binary(tile.data)
-              val entity = HttpEntity(ContentType(MediaTypes.`image/png`), img)
-              HttpResponse(OK, entity=entity)
-            case _ =>
-              HttpResponse(NotFound, entity="tile not found")
+        encodeResponse {
+          complete {
+            val q = tiles
+              .filter(_.col === col.toInt)
+              .filter(_.row === row.toInt)
+              .filter(_.zoomLevel === zoomLevel)
+            for {result <- DB.getConn.run(q.result.headOption)} yield result match {
+              case Some(tile: DBTile) =>
+                val img = DatatypeConverter.parseBase64Binary(tile.data)
+                val entity = HttpEntity(ContentType(MediaTypes.`image/png`), img)
+                HttpResponse(OK, entity=entity)
+              case _ =>
+                HttpResponse(NotFound, entity="tile not found")
+            }
           }
 
         }
-
     }
 
   } ~
   pathPrefix("assets") {
-    // optionally compresses the response with Gzip or Deflate
-    // if the client accepts compressed responses
     encodeResponse {
-      // serve up static content from a JAR resource
       getFromResourceDirectory("public/assets")
     }
   }
