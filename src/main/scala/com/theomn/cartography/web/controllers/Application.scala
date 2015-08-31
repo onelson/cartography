@@ -38,18 +38,8 @@ object Application extends App {
 
   val route = pathSingleSlash {
     get{
-      complete {
-        val entity = HttpEntity(ContentType(MediaTypes.`text/html`),
-            "<!doctype html>" + html(
-            head(
-              link(rel:="stylesheet")
-            ),
-            body(
-              h1("Cartography")
-            )
-          )
-        )
-        HttpResponse(OK, entity=entity)
+      encodeResponse {
+        getFromResource("public/index.html")
       }
     }
   } ~
@@ -102,6 +92,14 @@ object Application extends App {
 
     }
 
+  } ~
+  pathPrefix("assets") {
+    // optionally compresses the response with Gzip or Deflate
+    // if the client accepts compressed responses
+    encodeResponse {
+      // serve up static content from a JAR resource
+      getFromResourceDirectory("public/assets")
+    }
   }
 
     val bindingFuture = Http().bindAndHandle(route, "localhost", 9000)
