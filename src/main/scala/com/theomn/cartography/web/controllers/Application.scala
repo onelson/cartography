@@ -4,7 +4,7 @@ import javax.xml.bind.DatatypeConverter
 
 import akka.actor.ActorSystem
 import akka.event.Logging
-import akka.http.scaladsl.model.{MediaTypes, HttpEntity, HttpResponse, ContentType}
+import akka.http.scaladsl.model.{MediaTypes, HttpEntity, HttpResponse}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes._
@@ -58,7 +58,7 @@ object Application extends App {
         complete {
           val worldName = "TODO"
           for(tiles <- db.run(tiles.all.result)) yield {
-            val entity = HttpEntity(ContentType(MediaTypes.`text/html`),
+            val entity = HttpEntity(MediaTypes.`text/html`,
               "<!doctype html>" + html(
                 head(
                   link(rel:="stylesheet")
@@ -87,13 +87,12 @@ object Application extends App {
             for {result <- DB.getConn.run(q.result.headOption)} yield result match {
               case Some(tile: DBTile) =>
                 val img = DatatypeConverter.parseBase64Binary(tile.data)
-                val entity = HttpEntity(ContentType(MediaTypes.`image/png`), img)
+                val entity = HttpEntity(MediaTypes.`image/png`, img)
                 HttpResponse(OK, entity=entity)
               case _ =>
                 HttpResponse(NotFound, entity="tile not found")
             }
           }
-
         }
     }
 
